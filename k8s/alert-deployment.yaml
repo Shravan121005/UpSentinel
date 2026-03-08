@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-service
+  labels:
+    app: alert-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alert-service
+  template:
+    metadata:
+      labels:
+        app: alert-service
+    spec:
+      containers:
+        - name: alert-service
+          image: upsent-alert-service:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: upsent-secrets
+                  key: REDIS_URL
+            - name: ALERT_POLL_INTERVAL
+              valueFrom:
+                configMapKeyRef:
+                  name: upsent-config
+                  key: ALERT_POLL_INTERVAL
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: upsent-secrets
+                  key: SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: upsent-secrets
+                  key: SMTP_PORT
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: upsent-secrets
+                  key: SMTP_USER
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: upsent-secrets
+                  key: SMTP_PASS
+            - name: ALERT_EMAIL_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: upsent-secrets
+                  key: ALERT_EMAIL_FROM
+            - name: ALERT_EMAIL_RECIPIENTS
+              valueFrom:
+                secretKeyRef:
+                  name: upsent-secrets
+                  key: ALERT_EMAIL_RECIPIENTS
+            - name: DISCORD_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: upsent-secrets
+                  key: DISCORD_WEBHOOK_URL
+            - name: SLACK_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: upsent-secrets
+                  key: SLACK_WEBHOOK_URL
+            - name: ENABLE_DISCORD
+              valueFrom:
+                secretKeyRef:
+                  name: upsent-secrets
+                  key: ENABLE_DISCORD
+            - name: ENABLE_SLACK
+              valueFrom:
+                secretKeyRef:
+                  name: upsent-secrets
+                  key: ENABLE_SLACK
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi

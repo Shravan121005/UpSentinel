@@ -1,0 +1,28 @@
+{
+  "name": "upsent-ping-worker",
+  "version": "1.0.0",
+  "description": "Ping Worker microservice for UpSentinel - Uptime Monitoring Platform",
+  "main": "worker.js",
+  "scripts": {
+    "start": "node worker.js",
+    "dev": "nodemon worker.js"
+  },
+  "keywords": [
+    "uptime",
+    "monitoring",
+    "worker",
+    "ping"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bullmq": "^5.0.0",
+    "redis": "^4.6.10",
+    "axios": "^1.6.0",
+    "mongoose": "^7.5.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

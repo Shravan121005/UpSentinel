@@ -1,0 +1,106 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: upsent-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: upsent
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - upsent-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: upsent-redis
+    restart: unless-stopped
+    networks:
+      - upsent-net
+
+  api-server:
+    build:
+      context: ./api-server
+      dockerfile: Dockerfile
+    container_name: upsent-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      MONGODB_URI: mongodb://mongodb:27017/upsent
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-changeme_in_production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      NODE_ENV: production
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - upsent-net
+
+  ping-worker:
+    build:
+      context: ./ping-worker
+      dockerfile: Dockerfile
+    container_name: upsent-ping-worker
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/upsent
+      REDIS_URL: redis://redis:6379
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-10}
+      PING_TIMEOUT: ${PING_TIMEOUT:-10000}
+      PING_REGION: ${PING_REGION:-default}
+      NODE_ENV: production
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - upsent-net
+
+  alert-service:
+    build:
+      context: ./alert-service
+      dockerfile: Dockerfile
+    container_name: upsent-alert-service
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379
+      ALERT_POLL_INTERVAL: ${ALERT_POLL_INTERVAL:-5000}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      ALERT_EMAIL_FROM: ${ALERT_EMAIL_FROM:-}
+      ALERT_EMAIL_RECIPIENTS: ${ALERT_EMAIL_RECIPIENTS:-}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      ENABLE_DISCORD: ${ENABLE_DISCORD:-false}
+      ENABLE_SLACK: ${ENABLE_SLACK:-false}
+      NODE_ENV: production
+    depends_on:
+      - redis
+    networks:
+      - upsent-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000}
+    container_name: upsent-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api-server
+    networks:
+      - upsent-net
+
+volumes:
+  mongo_data:
+
+networks:
+  upsent-net:
+    driver: bridge
